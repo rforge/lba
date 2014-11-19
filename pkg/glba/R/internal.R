@@ -9,13 +9,15 @@ function(formula, data, prefix) {
 	return(ret)
 }
 
+
+
 getpars <-
-function(object) {
+function(object, ...) {
 	return(object$pars)
 }
 
 setpars <-
-function(object,values) {
+function(object,values, ...) {
 	np <- names(object$pars)
 	object$pars <- values
 	names(object$pars) <- np
@@ -66,6 +68,8 @@ function(rt,pars,loglink,weights) {
 	# vectorized loglike function
 	# rt: a vector with response times
 	# pars: matrix with 4+nrcat parameters on each row to model each rt
+	# the drift pars are ordered: the drift for the given response first, the others 
+	# after that (order in the remaining drifts does not make a difference)
 	for(i in 1:4) if(loglink[i]) pars[,i]=exp(pars[,i])
 	ndrift <- dim(pars)[2]-4
 	if(ndrift<2) stop("nr of drift pars should at least be two")
@@ -73,5 +77,6 @@ function(rt,pars,loglink,weights) {
 	ll <- n1PDF(t=rt-pars[,4], x0max=pars[,2],
 		chi=pars[,2]+pars[,3], sdI=pars[,1], # sdI=0.15, # Scott: I fit chi-x0max.
 		drift=pars[,5:(4+ndrift)])	
-	return(logl=-sum(log(pmax(weights*ll,1e-10))))
+# 	return(logl=-sum(log(pmax(weights*ll,1e-10)))) # this has weird effects due to the contaminant model ...
+	return(logl=-sum(log(weights*ll)))
 }
