@@ -11,12 +11,12 @@ function(formula, data, prefix) {
 
 
 
-getpars <-
+getPars <-
 function(object, ...) {
 	return(object$pars)
 }
 
-setpars <-
+setPars <-
 function(object,values, ...) {
 	np <- names(object$pars)
 	object$pars <- values
@@ -74,9 +74,11 @@ function(rt,pars,loglink,weights) {
 	ndrift <- dim(pars)[2]-4
 	if(ndrift<2) stop("nr of drift pars should at least be two")
 	ll <- numeric(length(rt))
+	
 	ll <- n1PDF(t=rt-pars[,4], x0max=pars[,2],
 		chi=pars[,2]+pars[,3], sdI=pars[,1], # sdI=0.15, # Scott: I fit chi-x0max.
 		drift=pars[,5:(4+ndrift)])	
+	
 # 	return(logl=-sum(log(pmax(weights*ll,1e-10)))) # this has weird effects due to the contaminant model ...
-	return(logl=-sum(log(weights*ll)))
+	return(logl=sum(log(weights*ll)))
 }
