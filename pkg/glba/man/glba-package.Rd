@@ -15,15 +15,15 @@ Fit LBA models with explanatory variables on the parameters.
 \tabular{ll}{
 Package: \tab glba\cr
 Type: \tab Package\cr
-Version: \tab 0.1 \cr
-Date: \tab 2014-07-18\cr
+Version: \tab 0.2 \cr
+Date: \tab 2015-02-11\cr
 License: \tab GPL \cr
 }
 See ?lba for examples.
 }
 
 \author{
-Ingmar Visser (with function from Brown, Heathcote and Donkin)
+Ingmar Visser (with functions from Brown, Heathcote and Donkin)
 Maintainer: Ingmar Visser <i.visser@uva.nl>
 }
 

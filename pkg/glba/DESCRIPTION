@@ -1,9 +1,9 @@
 Package: glba
-Version: 0.1
+Version: 0.2
 Title: General Linear Ballistic Accumulator Models
-Date: 2014-07-18
+Date: 2015-02-11
 Author: Ingmar Visser
 Maintainer: Ingmar Visser <i.visser@uva.nl>
-Depends: R (>= 3.1.0)
+Depends: R (>= 3.1.2)
 Description: Fits the linear ballistic accumulator model with explantory variables on the parameters
 License: GPL
