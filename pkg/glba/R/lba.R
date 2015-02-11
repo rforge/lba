@@ -171,8 +171,8 @@ function(rt,
 		
 		
 		if(method=="L-BFGS-B") {
-# 			lower <- rep(-Inf,length(pars))
-			lower <- rep(0,length(pars))
+ 			lower <- rep(-Inf,length(pars))
+# 			lower <- rep(0,length(pars))
 			upper <- rep(Inf,length(pars))
 		}
 		
