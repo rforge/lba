@@ -4,7 +4,7 @@ function(rt,
 	data, 
 	weights,
 	sddr = ~1, sp = ~1, bound = ~1, nond = ~1, drift = ~1,
-	scaling = c("sum"),
+	scaling = "sum",
 	loglink = c(FALSE,FALSE,FALSE,FALSE),
 	sdstart = 0.1,
 	startpars,
@@ -16,6 +16,8 @@ function(rt,
 	fit=TRUE, 
 	debug=FALSE) {
 	
+	call <- match.call()
+	
 	if(missing(data)) stop("'data' cannot be missing in a data analysis routine")
 	
 	nn <- nrow(data)
@@ -25,7 +27,6 @@ function(rt,
 	nm <- deparse(substitute(response))
 	form <- as.formula(paste(nm,"~1",sep=""))
 	resp <- model.frame(form,data=data)[,1]
-
 	
 	ndrift <- length(unique(resp))
 	ncat <- length(unique(resp))
@@ -61,17 +62,14 @@ function(rt,
 	
 	if(multiDrift) {
 		models <- list(sddrmod,spmod,boundmod,nondmod)
-		for(i in 1: ncat) {
+		for(i in 1:ncat) {
 			models[[4+i]] <- driftModels[[i]]
 		}
 	} else {
 		models <- list(sddrmod,spmod,boundmod,nondmod,drmod)
 	}
 	
-# 	print(models)
-# 	print(length(models))
-	
-	npars <- unlist(lapply(models,function(x){length(getpars(x))}))
+	npars <- unlist(lapply(models,function(x){length(getPars(x))}))
 	
 	if(debug) {
 		cat("npars: ", npars)
@@ -85,14 +83,18 @@ function(rt,
 		if(scaling=="fixedSD"&!fixed[1]==TRUE) {
 			warning("Sd of drift rate has been set to fixed value (default = 0.1).")
 			fixed[1] <- TRUE
+			startpars[1] <- sdstart
 		}
 	} else {
  		fixed <- rep(FALSE, sum(npars))
-		if(scaling=="fixedSD") fixed[1] <- TRUE
+		if(scaling=="fixedSD") {
+			fixed[1] <- TRUE
+			startpars[1] <- sdstart
+		}
 	}
 	
 	# get starting values from the models
-	allpars <- unlist(lapply(models,getpars))
+	allpars <- unlist(lapply(models,getPars))
 	# get starting values if provided
 	if(!(is.null(startpars))) {
 		namesp <- names(allpars)
@@ -121,8 +123,7 @@ function(rt,
 		}
 		
 		# here we need predictions for the drift rate for all possible responses, 
-		# not just the actual response
-		
+		# not just the actual response		
 		if(multiDrift) {
 			for(i in 1:ncat) {
 				parsMat[,4+i] <- predpmod(models[[4+i]],allpars[bt[4+i]:et[4+i]])
@@ -134,12 +135,13 @@ function(rt,
 		
 		# reorder the drift parameters
 		parsMat[,5:(4+ncat)] <- reorderDrift(resp,parsMat[,5:(4+ndrift)])
+		
 		ll <- obj(rt,parsMat,loglink=loglink,weights=weights)
 		
   		if(debug) print(head(parsMat,10))
 		
-		if(is.infinite(ll)) ll <- 1e10
-		if(is.nan(ll)) ll <- 1e10
+		if(is.infinite(ll)) ll <- -1e10
+		if(is.nan(ll)) ll <- -1e10
 		
 		if(debug) print(ll)
 		
@@ -154,57 +156,144 @@ function(rt,
 		print(logl(pars))
 	}
 	
-	
+	initlogl <- logl(pars)
+		
 	# 	lower <- c(0,0,0,0,0)
 	# 	upper <- c(10,10,10,.95,.95)
-	
-	if(!is.null(lower)|!is.null(upper)) {
-		if(method!="L-BFGS-B") {
-			warning("parameter bounds (lower and upper) can only be used with method 'L-BFGS-B'; bounds are ignored.")
+
+	if(fit) {
+
+		if(!is.null(lower)|!is.null(upper)) {
+			if(method!="L-BFGS-B") {
+				warning("parameter bounds (lower and upper) can only be used with method 'L-BFGS-B'; bounds are ignored.")
+			}
+		}
+		
+		
+		if(method=="L-BFGS-B") {
+# 			lower <- rep(-Inf,length(pars))
+			lower <- rep(0,length(pars))
+			upper <- rep(Inf,length(pars))
+		}
+		
+		maxit <- 1000
+		if(method=="Nelder-Mead") maxit <- 10000
+		
+		# fit the model
+		res <- optim(fn=logl,par=pars,
+			method=method,
+			hessian=hessian,
+			lower=lower,
+			upper=upper,
+			control=list(maxit=maxit,trace=1,fnscale=-1))
+				
+		allpars[!fixed] <- res$par
+		res$par <- allpars
+		
+		# set sp to it's appropriate value
+		# res$par[2] <- 0.5*res$par[3]
+		
+		if(res$convergence==0) {
+			if(hessian) {
+				res$hessian <- -1*res$hessian # needed because of maximization done instead of minimization
+				res <- res[c("par","value","convergence","hessian")]
+				info <- try(solve(res$hessian),silent=TRUE)
+				if(class(info)=="try-error") res$ses <- NULL
+				else res$ses <- sqrt(diag(info))			
+			} else res <- res[c("par","value","convergence")]
+		} else {
+			res <- res[c("par","value","convergence","message")]
+			warning("Likelihood optimization did not converge with code ", res$convergence, " and message %s ", res$message)
+		}
+		
+		names(res)[1:2] <- c("pars","logl")
+		
+		for(i in 1:length(npars)) {
+			models[[i]] <- setPars(models[[i]],res$par[bt[i]:et[i]])
 		}
 	}
 	
-	if(method=="L-BFGS-B") {
-# 		lower <- rep(-Inf,length(pars))
-		lower <- rep(0,length(pars))
-		upper <- rep(Inf,length(pars))
+	if(!fit) {
+		res <- list()
+		res$logl <- initlogl
 	}
 	
- 	res <- optim(fn=logl,par=pars,
-		method=method,
- 		hessian=hessian,
-		lower=lower,
-		upper=upper,
-		control=list(maxit=1000,trace=1))
-	
-	allpars[!fixed] <- res$par
-	res$par <- allpars
-	
-	# set sp to it's appropriate value
-	# res$par[2] <- 0.5*res$par[3]
-
-	if(res$convergence==0) {
-		if(hessian) {
-			res <- res[c("par","value","convergence","hessian")]
-			info <- try(solve(res$hessian),silent=TRUE)
-			if(class(info)=="try-error") res$ses <- NULL
-			else res$ses <- sqrt(diag(info))			
-		} else res <- res[c("par","value","convergence")]
-	} else {
-		res <- res[c("par","value","convergence","message")]
-		warning("Likelihood optimization did not converge with code ", res$convergence, " and message %s ", res$message)
-	}
-	
-	names(res)[1:2] <- c("pars","logl")
-	
+	# add fixed to res
 	res$fixed <- fixed
 	
-	for(i in 1:length(npars)) {
-		models[[i]] <- setpars(models[[i]],res$par[bt[i]:et[i]])
-	}
+	# add models to res
+	res$model <- models
 	
-	# add standard errors
-	res$models <- models
+	# add npars to res
+	res$npar <- sum(npars)
+	res$freepars <- sum(npars)-sum(fixed)
+	
+	# add nr of data for use in bic
+	res$nobs <- length(rt)
+	
+	res$call <- call
+	
+	class(res) <- "lba"
 	
 	return(res)
 }
+
+print.lba <- function(x, ...) {
+	bic <- -2*x$logl+log(x$nobs)*x$freepars
+	cat("Call: ")
+	print(x$call)
+	cat("\nModel convergence: ", x$convergence, "(0 is good)\n")
+	cat("Log likelihood: ", round(x$logl,3), "\n")
+	cat("Nr of free parameters: ", x$freepars, "\n")
+	cat("BIC: ", round(bic,3),"\n")
+	cat("Fitted parameters: \n")
+	print(x$pars)
+}
+
+summary.lba <- function(object, ...) {
+	bic <- -2*object$logl+log(object$nobs)*object$freepars
+	cat("Model convergence: ", object$convergence, "(0 is good)\n")
+	cat("Log likelihood: ", round(object$logl,3), "\n")
+	cat("Nr of free parameters: ", object$freepars, "\n")
+	cat("BIC: ", round(bic,3),"\n")
+	cat("Fitted models: \n")
+	for(i in 1:5) summary(object$model[[i]])
+	if("hessian" %in% names(object)) {
+		cat("\n Parameter standard errors \n")
+		tb <- tablba(object)
+		print(tb)
+	}
+}
+
+logLik.lba <- function(object, ...) {
+	return(object$logl)
+}
+
+tablba <- function(object) {
+	
+	if(!"hessian" %in% names(object))stop("Hessian required to compute
+	standard errors; set hessian=TRUE when fitting the model")
+	
+	pp <- object$pars
+	ses <- rep(0,length(pp))
+	ses[!object$fixed] <- object$ses
+	zz <- pp/ses
+	pval <- pnorm(zz,lower.tail=FALSE)
+	tb <- data.frame(value=round(pp,3),se=round(ses,5),z=round(zz,2),p=round(pval,5))
+	tb
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
