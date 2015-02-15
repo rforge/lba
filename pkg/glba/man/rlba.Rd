@@ -17,7 +17,7 @@ rlba(n, b, A, vs, s, t0, st0 = 0, truncdrifts = TRUE)
   \item{vs}{The drift rates for each of the accumulators.}
   \item{s}{The standard deviation of the drift rates.}
   \item{t0}{The non-decision time.}
-  \item{st0}{??}
+  \item{st0}{Variability of the non-decision time, uniformly distributed as t0+U(0,st0).}
   \item{truncdrifts}{Logical; whether drifts that are generated should be
   truncated at zero.  Negative RTs may result when set to FALSE.}
 }
@@ -30,16 +30,16 @@ No more details.
 time and the response, respectively.}
 
 \references{
-From Brown & Heathcote, retrieved from: 
-http://www.newcl.org/publications/2008/lbasoftware.htm
+Function adapted from Brown and Heathcote. 
+
+\url{http://www.newcl.org/publications/2008/lbasoftware.htm}
 }
 
 \author{
-From Brown & Heathcote, retrieved from: 
-http://www.newcl.org/publications/2008/lbasoftware.htm
-}
+Ingmar Visser, function adapted from Brown and Heathcote. 
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
+\url{http://www.newcl.org/publications/2008/lbasoftware.htm}
+}
 
 \examples{
 # to be added later

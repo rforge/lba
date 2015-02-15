@@ -23,14 +23,13 @@ See ?lba for examples.
 }
 
 \author{
-Ingmar Visser (with functions from Brown, Heathcote and Donkin)
+Ingmar Visser (with functions adapted from Brown, Heathcote and Donkin).
 Maintainer: Ingmar Visser <i.visser@uva.nl>
 }
 
 \references{
-Brown & Heathcote, 2008.
+Brown, S. D., and Heathcote, A. (2008). The simplest complete model of choice response time: linear ballistic accumulation. Cognitive psychology, 57(3), 153-178.
 }
-
 \keyword{package}
 \keyword{statmodel}
 

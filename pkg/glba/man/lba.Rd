@@ -69,7 +69,7 @@ tablba(object)
   fitted using a log link function (to avoid boundary estimation issues).}
   
   \item{sdstart}{Starting value of the standard deviation of the drift
-  rates in case scaling="fixedSD".}
+  rates in case argument scaling uses option "fixedSD".}
   
   \item{startpars}{Vector of starting values for the parameters.  This is
   currently a required argument as no automatic starting values are
@@ -79,13 +79,13 @@ tablba(object)
   specify whether parameters should remain fixed during estimation;
   sometimes required for more stable estimation.}
   
-  \item{method}{Optimization method; passed to optim}
+  \item{method}{Optimization method; passed to optim.}
   
   \item{hessian}{Logical; indicating whether the estimated hessian at the
   minimum; passed to optim.}
   
   \item{lower, upper}{lower and upper boundaries for the parameters; only
-  applicable with optim'ization method='L-BFGS-B'}
+  applicable with optimization method 'L-BFGS-B' is used.}
   
   \item{fit}{Logical; indicating whehter the model should be fit, ie, its
   parameters optimized or not.  Default is TRUE.}
@@ -93,11 +93,11 @@ tablba(object)
   \item{debug}{Logical, default is FALSE; prints out detailed information
   on submodels, parameters et cetera during optimization.}
   
-  \item{object}{a (fitted) lba model}
+  \item{object}{a (fitted) lba model.}
   
-  \item{x}{a (fitted) lba model}
+  \item{x}{a (fitted) lba model.}
   
-  \item{...}{not currently in use}
+  \item{...}{not currently in use.}
   
   
 }
@@ -148,7 +148,7 @@ The \code{lba} function returns a list with the following components:
 }
 
 \references{
-LBA models as in Brown & Heathcote 2008.
+LBA models as in Brown and Heathcote, Cognitive science, 2008.
 }
 
 \author{
@@ -160,45 +160,56 @@ data(bh08)
 # remove extreme RTs
 bh08 <- bh08[bh08$rt>.180&bh08$rt<2,]
 
-# these are based on the quantile parameter estimates from B&H 2008:
-# parsBH <- c(0.289, 0.321, 0.233, 0.392, 0.984, 0.791, 0.619)
-# names(parsBH) <- c("s","A","ter","b","v1","v2","v3")
+# starting values based on the quantile parameter 
+# estimates from Brown and Heathcote, 2008:
+# pars <- c(.25,.3,.1,.2,.9,.75,.6)
 
-# use random starting value or those provided in the comment above
-set.seed(2)
-# fit the model
-m1 <- lba(rt=rt,response=acc,drift=~diff-1,data=bh08,startpars=runif(7), hessian=TRUE) 
+# fit the model with starting values
+pars <- c(.25,.3,.1,.2,.9,.75,.6)
+m1 <- lba(rt=rt,response=acc,drift=~diff-1,data=bh08,
+	startpars=pars)
 
 m1
 
 summary(m1)
 
 \dontrun{
-# get the parameters
-pp <- m1$pars
-# simulate some data from the model for the three conditions
-set.seed(1)
-dt1 <- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[5],1-pp[5]), s=pp[1], t0=pp[4], truncdrifts=TRUE)
-dt2 <- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[6],1-pp[6]), s=pp[1], t0=pp[4], truncdrifts=TRUE)
-dt3 <- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[7],1-pp[7]), s=pp[1], t0=pp[4], truncdrifts=TRUE)
-dt <- rbind(dt1,dt2,dt3)
-dt$diff <- gl(3,1000)
-dt$resp <- ifelse(dt$resp==2,0,1)
+	# use random starting values instead
+	set.seed(2)
+	m1 <- lba(rt=rt,response=acc,drift=~diff-1,data=bh08,
+	startpars=pars, hessian=TRUE)
 
-# remove extreme RTs
-dt <- dt[dt$rt>.180&dt$rt<2,]
-
-# refit the model with the simualted data
-m1rf <- lba(rt=rt,response=resp,drift=~diff-1,data=dt,startpars=pp)
-}
-
-data(numpp1)
-
-set.seed(9)
-m2 <- lba(rt=rt,response=acc,drift=~diff+block,data=numpp1,
-startpars=c(0.25,runif(4),0,0), scaling="fixedSD", sdstart=0.25, hessian=TRUE) 
-
-tablba(m2) 
+	summary(m1)
+	
+	# get the parameters
+	pp <- m1$pars
+	# simulate some data from the model for the three conditions
+	set.seed(1)
+	dt1 <- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[5],1-pp[5]), 
+		s=pp[1], t0=pp[4], truncdrifts=TRUE)
+	dt2 <- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[6],1-pp[6]), 
+		s=pp[1], t0=pp[4], truncdrifts=TRUE)
+	dt3 <- rlba(1000, b=pp[3]+pp[2], A=pp[2], vs=c(pp[7],1-pp[7]), 
+		s=pp[1], t0=pp[4], truncdrifts=TRUE)
+	dt <- rbind(dt1,dt2,dt3)
+	dt$diff <- gl(3,1000)
+	dt$resp <- ifelse(dt$resp==2,0,1)
+	
+	# remove extreme RTs
+	dt <- dt[dt$rt>.180&dt$rt<2,]
+	
+	# refit the model with the simualted data
+	m1rf <- lba(rt=rt,response=resp,drift=~diff-1,data=dt,startpars=pp)
+	
+	data(numpp1)
+	
+	set.seed(9)
+	m2 <- lba(rt=rt,response=acc,drift=~diff+block,data=numpp1,
+	startpars=c(0.25,runif(4),0,0), scaling="fixedSD", 
+		sdstart=0.25, hessian=TRUE) 
+	tablba(m2) 
+	
+	}
 
 }
 

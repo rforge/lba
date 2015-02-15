@@ -2,12 +2,12 @@
 \alias{bh08}
 \docType{data}
 \title{
-Example data from Brown & Heathcote (2008). 
+Example data from Brown and Heathcote (2008). 
 }
 
 \description{
 
-Example data from Brown & Heathcote (2008); response times and accuracies
+Example data from Brown and Heathcote (2008); response times and accuracies
 for three difficulty levels.
 
 }
@@ -22,13 +22,15 @@ for three difficulty levels.
   }
 }
 \details{
-Data retrieved from: http://www.newcl.org/members/chris/fitLBA.zip
+Example data from Brown and Heathcote, 2008. 
 }
 \source{
-Brown & Heathcote, 2008
+Data from: \url{http://www.newcl.org/members/chris/fitLBA.zip}
+
+Brown and Heathcote, Cognitive science, 2008
 }
 \references{
-Brown & Heathcote, 2008
+Brown and Heathcote, 2008
 }
 \examples{
 data(bh08)

@@ -29,13 +29,13 @@ Implicit learning data from Visser et al (2007); these data are from blocks 1-12
   }
 }
 \details{
-Data from Visser et al (2007), Memory & Cognition. 
+Data from Visser et al (2007), Memory and Cognition. 
 }
 \source{
-Visser et al (2007), Memory & Cognition. 
+Visser et al (2007), Memory and Cognition. 
 }
 \references{
-Visser et al (2007), Memory & Cognition. 
+Visser et al (2007), Memory and Cognition. 
 }
 \examples{
 data(ilpp2)

@@ -1,18 +1,21 @@
 \name{internal}
 
-\alias{setpars}
-\alias{getpars}
+\alias{setPars}
+\alias{getPars}
+
 \alias{pmod}
 \alias{predpmod}
-\alias{obj}
+
 \alias{predict.pmod}
 \alias{print.pmod}
 \alias{summary.pmod}
+
+\alias{obj}
 \alias{reorderDrift}
 
 
 \title{
-Functions for internal use. 
+Utility functions for internal use. 
 }
 
 
@@ -24,6 +27,4 @@ each of the parameters.
 \author{
 Ingmar Visser
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
