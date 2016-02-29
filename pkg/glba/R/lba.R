@@ -1,3 +1,18 @@
+
+# starting value generation for lba models
+
+startlba <- function(rt, resp, ...) {
+    
+    sddr <- sd(rt)    
+    drift <- mean(resp)
+    nond <- min(rt)/2
+    qrt <- quantile(rt)
+    bound <- drift*(qrt[4]-nond)
+    sp <- drift*(qrt[2]-nond)
+    
+    return(pars=c(sddr, sp, bound-sp, nond, drift))
+}
+    
 lba <-
 function(rt, 
 	response, 
@@ -7,7 +22,10 @@ function(rt,
 	scaling = "sum",
 	loglink = c(FALSE,FALSE,FALSE,FALSE),
 	sdstart = 0.1,
-	startpars,
+	startmethod="smartstart",
+	nstart = 100,
+	nondecconstr = TRUE,
+	startpars = NULL,
 	fixed = NULL,
 	method = "L-BFGS-B",
 	hessian = FALSE,
@@ -49,24 +67,24 @@ function(rt,
 	nondmod <- pmod(nond, data=data, prefix="nond")
 	multiDrift <- FALSE
 	if(is.list(drift)) {
-		multiDrift <- TRUE
-		ndriftModels <- length(drift)
-		if(ndriftModels!=ncat) stop("Nr of 'drift' rate models should equal the number of categories in the 'response' variable")
-		driftModels <- list()
-		for(i in 1:ncat) {
-			driftModels[[i]] <- pmod(drift[[i]], data=data, prefix=paste("drift",i,sep=""))
-		}
+	    multiDrift <- TRUE
+	    ndriftModels <- length(drift)
+	    if(ndriftModels!=ncat) stop("Nr of 'drift' rate models should equal the number of categories in the 'response' variable")
+	    driftModels <- list()
+	    for(i in 1:ncat) {
+		driftModels[[i]] <- pmod(drift[[i]], data=data, prefix=paste("drift",i,sep=""))
+	    }
 	} else {
-		drmod <- pmod(drift, data=data, prefix="drift")
+	    drmod <- pmod(drift, data=data, prefix="drift")
 	}
 	
 	if(multiDrift) {
-		models <- list(sddrmod,spmod,boundmod,nondmod)
-		for(i in 1:ncat) {
-			models[[4+i]] <- driftModels[[i]]
-		}
+	    models <- list(sddrmod,spmod,boundmod,nondmod)
+	    for(i in 1:ncat) {
+		models[[4+i]] <- driftModels[[i]]
+	    }
 	} else {
-		models <- list(sddrmod,spmod,boundmod,nondmod,drmod)
+	    models <- list(sddrmod,spmod,boundmod,nondmod,drmod)
 	}
 	
 	npars <- unlist(lapply(models,function(x){length(getPars(x))}))
@@ -76,32 +94,37 @@ function(rt,
 	}
 	
 	if(!(is.null(fixed))) {
-		lf <- length(fixed)
-		if(!(lf==sum(npars))) stop(paste("'fixed' has incorrect length, should be ", sum(npars)))
-		if(is.null(startpars)) stop("'fixed' parameters can only be provided in combinations with starting values")
-		if(!(is.logical(fixed))) stop("'fixed' must be of type logical")
-		if(scaling=="fixedSD"&!fixed[1]==TRUE) {
-			warning("Sd of drift rate has been set to fixed value (default = 0.1).")
-			fixed[1] <- TRUE
-			startpars[1] <- sdstart
-		}
+	    lf <- length(fixed)
+	    if(!(lf==sum(npars))) stop(paste("'fixed' has incorrect length, should be ", sum(npars)))
+	    if(is.null(startpars)) stop("'fixed' parameters can only be provided in combinations with starting values")
+	    if(!(is.logical(fixed))) stop("'fixed' must be of type logical")
+	    if(scaling=="fixedSD"&!fixed[1]==TRUE) {
+		warning("Sd of drift rate has been set to fixed value (default = 0.1).")
+		fixed[1] <- TRUE
+		startpars[1] <- sdstart
+	    }
 	} else {
- 		fixed <- rep(FALSE, sum(npars))
-		if(scaling=="fixedSD") {
-			fixed[1] <- TRUE
-			startpars[1] <- sdstart
-		}
+	    fixed <- rep(FALSE, sum(npars))
+	    if(scaling=="fixedSD") {
+		fixed[1] <- TRUE
+		startpars[1] <- sdstart
+	    }
 	}
 	
 	# get starting values from the models
 	allpars <- unlist(lapply(models,getPars))
 	# get starting values if provided
-	if(!(is.null(startpars))) {
-		namesp <- names(allpars)
-		allpars <- startpars
-		names(allpars) <- namesp
+	if(!is.null(startpars)) {
+	    namesp <- names(allpars)
+	    allpars <- startpars
+	    names(allpars) <- namesp
+	} else {
+	    # generate random start values otherwise
+	    namesp <- names(allpars)
+	    allpars <- runif(length(allpars))
+	    names(allpars) <- namesp
 	}
-	
+		
 	# get begin and end indices of submodel parameters
 	lt <- length(npars)
 	et <- cumsum(npars)
@@ -140,14 +163,18 @@ function(rt,
 		
   		if(debug) print(head(parsMat,10))
 		
-		if(is.infinite(ll)) ll <- -1e10
-		if(is.nan(ll)) ll <- -1e10
+		safe=TRUE
+		
+		if(safe) {
+		    if(is.infinite(ll)) ll <- -1e10
+		    if(is.nan(ll)) ll <- -1e10
+		}
 		
 		if(debug) print(ll)
 		
 		return(ll)
 	}
-	
+		
 	pars <- allpars[!fixed]
 	
 	if(debug) {
@@ -156,66 +183,146 @@ function(rt,
 		print(logl(pars))
 	}
 	
+	npp <- sum(npars)
+	
+	lls <- numeric(nstart)
+	if(startmethod=="random") {
+	    parsvec <- runif(npp*nstart)
+# 	    print(parsvec)
+# 	    print(nstart)
+	    for(i in 1:nstart) {
+		allpars <- parsvec[1:npp+(i-1)*npp]
+		pars <- allpars[!fixed]
+#  		print(pars)
+		lls[i] <- logl(pars)
+	    }
+	    bestll <- which.max(lls)
+	    allpars <- parsvec[1:npp+(bestll-1)*npp]
+	    names(allpars) <- namesp
+	}
+	
+	if(startmethod=="smartstart") {
+	    startp <- startlba(rt, resp)
+	    parsvec <- matrix(rnorm(npp*nstart,sd=0.05),ncol=npp,nrow=nstart)
+	    colnames(parsvec) <- namesp
+	    for(i in c(1,2,3,5)) parsvec[,bt[i]] <- runif(nstart,0.7*startp[i],startp[i])
+	    parsvec[,bt[4]] <- runif(nstart,0.5*startp[4],1.5*startp[4])
+	    
+	    colnames(parsvec) <- namesp
+	    
+	    allpars <- numeric(npp)
+	    allpars[bt] <- startp
+	    parsvec[1,] <- allpars
+	    
+	    lls <- numeric(nstart)	    
+	    names(allpars) <- namesp
+	    for(i in 1:nstart) {
+		allpars <- parsvec[i,]
+		pars <- allpars[!fixed]
+		lls[i] <- logl(pars)
+	    }
+# 	    print(lls)
+	    
+	    bestll <- which.max(lls)
+	    allpars <- parsvec[bestll,]
+	    names(allpars) <- namesp
+
+# 	    print(parsvec)
+	}	
+	
+	pars <- allpars[!fixed]
+	
+	startpars <- allpars
+	
 	initlogl <- logl(pars)
-		
+	
+ 	print(-initlogl)
+	
+	if(initlogl==-1e10) fit <- FALSE
+	
 	# 	lower <- c(0,0,0,0,0)
 	# 	upper <- c(10,10,10,.95,.95)
 
 	if(fit) {
-
-		if(!is.null(lower)|!is.null(upper)) {
-			if(method!="L-BFGS-B") {
-				warning("parameter bounds (lower and upper) can only be used with method 'L-BFGS-B'; bounds are ignored.")
-			}
+	    if(!is.null(lower)|!is.null(upper)) {
+		if(method!="L-BFGS-B") {
+		    warning("parameter bounds (lower and upper) can only be used with method 'L-BFGS-B'; bounds are ignored.")
 		}
-		
-		
-		if(method=="L-BFGS-B") {
- 			lower <- rep(-Inf,length(pars))
-# 			lower <- rep(0,length(pars))
-			upper <- rep(Inf,length(pars))
-		}
-		
-		maxit <- 1000
-		if(method=="Nelder-Mead") maxit <- 10000
-		
-		# fit the model
-		res <- optim(fn=logl,par=pars,
-			method=method,
-			hessian=hessian,
-			lower=lower,
-			upper=upper,
-			control=list(maxit=maxit,trace=1,fnscale=-1))
-				
-		allpars[!fixed] <- res$par
-		res$par <- allpars
-		
-		# set sp to it's appropriate value
-		# res$par[2] <- 0.5*res$par[3]
-		
-		if(res$convergence==0) {
-			if(hessian) {
-				res$hessian <- -1*res$hessian # needed because of maximization done instead of minimization
-				res <- res[c("par","value","convergence","hessian")]
-				info <- try(solve(res$hessian),silent=TRUE)
-				if(class(info)=="try-error") res$ses <- NULL
-				else res$ses <- sqrt(diag(info))			
-			} else res <- res[c("par","value","convergence")]
-		} else {
-			res <- res[c("par","value","convergence","message")]
-			warning("Likelihood optimization did not converge with code ", res$convergence, " and message %s ", res$message)
-		}
-		
-		names(res)[1:2] <- c("pars","logl")
-		
-		for(i in 1:length(npars)) {
-			models[[i]] <- setPars(models[[i]],res$par[bt[i]:et[i]])
-		}
+	    }
+	    
+# 	    # constrain sum of nond pars to be larger than zero
+# 	    uinond <- matrix(0,nrow=1,ncol=npp)
+# 	    uinond[1,bt[4]:et[4]] <- 1
+# 	    
+# 	    ui <- diag(npp)
+# 	    ui <- rbind(ui,uinond)
+# 	    
+# 	    ui <- ui[,!fixed] 
+# 	    
+# 	    ci <- rep(-Inf,length(pars))
+# 	    ci[bt] <- 0
+# 	    
+# 	    ci <- c(ci,0)
+# 	    
+# 	    print(ui)
+# 	    print(ui%*%pars)
+# 	    print(ci)
+	    
+	    if(method=="L-BFGS-B") {
+		lower <- rep(-Inf,length(pars))
+		# lower <- rep(0,length(pars))
+		lower[bt] <- 0
+		if(nondecconstr) lower[bt[4]:et[4]] <- 0
+		upper <- rep(Inf,length(pars))
+	    }
+	    
+	    maxit <- 1000
+	    if(method=="Nelder-Mead") maxit <- 10000
+	    
+	    # fit the model
+	    res <- optim(fn=logl,par=pars,
+		method=method,
+		hessian=FALSE,
+ 		lower=lower,
+ 		upper=upper,
+# 		ui=ui,
+# 		ci=ci,
+		control=list(maxit=maxit,trace=1,fnscale=-1))
+	    
+	    allpars[!fixed] <- res$par
+	    res$par <- allpars
+	    
+	    # set sp to it's appropriate value
+	    # res$par[2] <- 0.5*res$par[3]
+	    
+	    if(res$convergence==0 && res$value!=-1e10) {
+		if(hessian) {
+		    res$hessian <- optimHess(fn=logl,par=allpars[!fixed])
+		    res$hessian <- -1*res$hessian # needed because of maximization done instead of minimization
+		    res <- res[c("par","value","convergence","hessian")]
+		    info <- try(solve(res$hessian),silent=TRUE)
+		    if(class(info)=="try-error") res$ses <- NULL
+		    else res$ses <- sqrt(diag(info))			
+		} else res <- res[c("par","value","convergence")]
+	    } else {
+		res <- res[c("par","value","convergence","message")]
+		warning("Likelihood optimization did not converge with code ", res$convergence, " and message %s ", res$message)
+	    }
+	    
+	    names(res)[1:2] <- c("pars","logl")
+	    
+	    for(i in 1:length(npars)) {
+		models[[i]] <- setPars(models[[i]],res$par[bt[i]:et[i]])
+	    }
 	}
 	
 	if(!fit) {
-		res <- list()
-		res$logl <- initlogl
+	    res <- list()
+	    res$logl <- initlogl
+	    if(initlogl==-1e10) {
+		res$message="non-feasible start vals"
+		res$convergence <- 1
+	    }
 	}
 	
 	# add fixed to res
@@ -232,6 +339,8 @@ function(rt,
 	res$nobs <- length(rt)
 	
 	res$call <- call
+	
+	res$startpars <- startpars
 	
 	class(res) <- "lba"
 	
@@ -265,22 +374,53 @@ summary.lba <- function(object, ...) {
 	}
 }
 
+biclba <- function(object, ...) {
+    bic <- -2*object$logl+log(object$nobs)*object$freepars
+    bic
+}
+
+getInt.lba <- function(object, ...) {
+    intercepts <- numeric(5)
+    for(i in 1:5) intercepts[i] <- object$model[[i]]$pars[1]
+    return(intercepts)
+}
+
+admissible.lba <- function(object, ...) {
+    admiss <- TRUE
+    message <- "none"
+    if(object$convergence!=0) {
+	admiss <- FALSE
+	message <- paste(message, "non-converged", sep=" ;")
+    }
+    intcpts <- glba:::getInt.lba(object)
+    if(any(intcpts<0)) {
+	admiss <- FALSE
+	message <- paste(message, "negative par(s)", sep=" ;")
+    }
+    if(object$logl==-1e10) {
+	admiss <- FALSE
+	message <- paste(message, "iterations did not start", sep=" ;")
+    }
+    message <- paste(message, object$message, sep=" ;")
+    return(list(admiss=admiss,message=message))
+}
+
 logLik.lba <- function(object, ...) {
-	return(object$logl)
+    return(object$logl)
 }
 
 tablba <- function(object) {
 	
-	if(!"hessian" %in% names(object))stop("Hessian required to compute
-	standard errors; set hessian=TRUE when fitting the model")
-	
-	pp <- object$pars
-	ses <- rep(0,length(pp))
-	ses[!object$fixed] <- object$ses
-	zz <- pp/ses
-	pval <- pnorm(zz,lower.tail=FALSE)
-	tb <- data.frame(value=round(pp,3),se=round(ses,5),z=round(zz,2),p=round(pval,5))
-	tb
+    if(!"hessian" %in% names(object))stop("Hessian required to compute standard errors; set hessian=TRUE when fitting the model")
+    
+    pp <- object$pars
+    ses <- rep(0,length(pp))
+    ses[!object$fixed] <- object$ses
+    zz <- abs(pp/ses)
+    pval <- pnorm(zz,lower.tail=FALSE)
+    tb <- data.frame(value=round(pp,3),se=round(ses,5),z=round(zz,2),p=round(pval,5))
+    tb
+    
 }
 
 

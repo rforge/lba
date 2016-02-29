@@ -9,8 +9,6 @@ function(formula, data, prefix) {
 	return(ret)
 }
 
-
-
 getPars <-
 function(object, ...) {
 	return(object$pars)
