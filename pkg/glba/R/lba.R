@@ -1,18 +1,5 @@
 
-# starting value generation for lba models
 
-startlba <- function(rt, resp, ...) {
-    
-    sddr <- sd(rt)    
-    drift <- mean(resp)
-    nond <- min(rt)/2
-    qrt <- quantile(rt)
-    bound <- drift*(qrt[4]-nond)
-    sp <- drift*(qrt[2]-nond)
-    
-    return(pars=c(sddr, sp, bound-sp, nond, drift))
-}
-    
 lba <-
 function(rt, 
 	response, 
@@ -90,7 +77,7 @@ function(rt,
 	npars <- unlist(lapply(models,function(x){length(getPars(x))}))
 	
 	if(debug) {
-		cat("npars: ", npars)
+	    cat("npars: ", npars)
 	}
 	
 	if(!(is.null(fixed))) {
@@ -119,7 +106,7 @@ function(rt,
 	    allpars <- startpars
 	    names(allpars) <- namesp
 	} else {
-	    # generate random start values otherwise
+	    # generate random start values 
 	    namesp <- names(allpars)
 	    allpars <- runif(length(allpars))
 	    names(allpars) <- namesp
@@ -221,6 +208,7 @@ function(rt,
 		pars <- allpars[!fixed]
 		lls[i] <- logl(pars)
 	    }
+	    
 # 	    print(lls)
 	    
 	    bestll <- which.max(lls)

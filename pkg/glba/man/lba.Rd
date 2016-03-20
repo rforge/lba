@@ -23,8 +23,11 @@ nond = ~1,
 drift = ~1, 
 scaling = "sum", 
 loglink = c(FALSE, FALSE, FALSE, FALSE), 
-sdstart=0.1,
-startpars, 
+sdstart = 0.1,
+startmethod = "smartstart",
+nstart = 100,
+nondecconstr = TRUE,
+startpars = NULL, 
 fixed = NULL,
 method = "L-BFGS-B",
 hessian = FALSE,
@@ -70,6 +73,12 @@ tablba(object)
   
   \item{sdstart}{Starting value of the standard deviation of the drift
   rates in case argument scaling uses option "fixedSD".}
+  
+  \item{startmethod}{Default method constructs starting values using function startlba.}
+  
+  \item{nstart}{Number of different sets of starting values to use.}
+  
+  \item{nondecconstr}{Logical; puts a lower bound (0) on the non-decision time related parameters.}
   
   \item{startpars}{Vector of starting values for the parameters.  This is
   currently a required argument as no automatic starting values are

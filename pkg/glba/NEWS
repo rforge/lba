@@ -1,0 +1,11 @@
+
+Changes in version 0.3
+
+  o Added arguments startmethod, nstart, nondecconstr to function lba. 
+  
+  o Added function startlba that computes starting values means, standard 
+    deviations, interquartile ranges, and accuracies. 
+    
+SVN revision #13 used for the RT inference paper. 
+
+First version released on CRAN: 0.2
