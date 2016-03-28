@@ -1,5 +1,5 @@
 
-export(lba,tablba,rlba,startlba,getInt.lba)
+export(lba,tablba,rlba,rlba2,startlba,getInt.lba)
 
 S3method(print, lba)
 S3method(logLik, lba)
