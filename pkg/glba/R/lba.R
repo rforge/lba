@@ -19,6 +19,7 @@ function(rt,
     lower = -Inf,
     upper = Inf, 
     fit=TRUE, 
+    trace=1,
     debug=FALSE) {
     
     call <- match.call()
@@ -37,6 +38,8 @@ function(rt,
     ndrift <- length(unique(resp))
     ncat <- length(unique(resp))
     
+	if(ncat>2) stop("The current version only supports binary data.")
+	
     # specify weights or get them from data
     if(missing(weights)) weights <- rep(1,nn)
     else {
@@ -226,20 +229,20 @@ function(rt,
     # set pars to startpars
     startpars <- allpars
     
+    # remove fixed parameters
     pars <- allpars[!fixed]
     
-    initlogl <- logl(pars)
-    
-    print(-initlogl)
-    
-    if(initlogl==-1e10) fit <- FALSE
- 
-    pars <- allpars[!fixed]
-    
+    # get initial log likelihood
+    initlogl <- logl(pars)    
+    if(initlogl==-1e10) {
+	fit <- FALSE
+	warning("initial parameter values not feasible; model cannot be fitted.")
+    }
+        
     if(debug) {
 	print("Initial parameters and log-likelihood")
 	print(pars)
-	print(logl(pars))
+	print(initlogl)
     }
     
     # 	lower <- c(0,0,0,0,0)
@@ -274,12 +277,14 @@ function(rt,
 	if(method=="L-BFGS-B") {
 	    lower <- rep(-Inf,length(pars))
 	    # lower <- rep(0,length(pars))
-	    lower[bt] <- 0
+	    if(!any(loglink)) lower[bt] <- 0
 	    if(nondecconstr) lower[bt[4]:et[4]] <- 0
 	    upper <- rep(Inf,length(pars))
 	}
 	
-	maxit <- 1000
+	nobs <- length(rt)
+	
+	maxit <- max(1000,3*nobs)
 	
 	if(method=="Nelder-Mead") maxit <- 10000
 	
@@ -291,7 +296,7 @@ function(rt,
 	    upper=upper,
 	    # ui=ui,
 	    # ci=ci,
-	    control=list(maxit=maxit,trace=1,fnscale=-1)
+	    control=list(maxit=maxit,trace=trace,fnscale=-1)
 	)
 	
 	allpars[!fixed] <- res$par
@@ -339,6 +344,7 @@ function(rt,
     res$nobs <- length(rt)
     res$call <- call
     res$startpars <- startpars
+    res$ncat <- ncat
     
     class(res) <- "lba"
     return(res)

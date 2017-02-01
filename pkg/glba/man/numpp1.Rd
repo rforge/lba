@@ -23,7 +23,7 @@ a display of randomly placed dots into 'few' or 'many'.
 	\item{\code{nr}}{required response; factor with levels 'few' and 'many'}	
 	\item{\code{block}}{block number (1-5)}
     \item{\code{dots}}{number of dots in the display}
-    \item{\code{diff}}{absolute value of 'dots'-50}
+    \item{\code{diff}}{absolute value of "'dots' minus 50"}
 	\item{\code{df2}}{dichotomized version of 'diff'}
 	\item{\code{id}}{participant id}
   }

@@ -46,6 +46,7 @@ function(nn,bnd,sp,drift,sddr,nond,st0=0) {
     drfts[drfts<0]=0
     
 #     print(head(drfts))
+#     print(tail(drfts))
 #     print(dim(drfts))
     
     starts=matrix(runif(min=0,max=sp,n=nn*ncat),ncol=ncat,byrow=TRUE)
