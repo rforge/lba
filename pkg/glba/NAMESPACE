@@ -1,3 +1,8 @@
+importFrom("stats", "as.formula", "dnorm", "model.frame",
+             "model.matrix", "optim", "optimHess", "pnorm", "quantile",
+             "rnorm", "runif", "sd")
+
+importFrom("utils", "head")
 
 export(lba,tablba,rlba,rlba2,startlba,getInt.lba,predpmod,getPars,biclba)
 

@@ -395,7 +395,7 @@ admissible.lba <- function(object, ...) {
 	admiss <- FALSE
 	message <- paste(message, "non-converged", sep=" ;")
     }
-    intcpts <- glba:::getInt.lba(object)
+    intcpts <- getInt.lba(object) #glba:::
     if(any(intcpts<0)) {
 	admiss <- FALSE
 	message <- paste(message, "negative par(s)", sep=" ;")

@@ -17,12 +17,15 @@ For internal use only.
 }
 
 \references{
-\url{http://www.newcl.org/members/chris/fitLBA.zip}
+
+Original code was extracted in 2015 here: http://www.newcl.org/members/chris/fitLBA.zip
+
 }
 
 \author{
 Ingmar Visser adapted these functions, to make them fully vectorized in all
 relevant arguments.  Original functions fptpdf, fptcdf and n1PDF are
-provided by Brown, Heathcote and Donkin and are retrieved from:
-\url{http://www.newcl.org/members/chris/fitLBA.zip}
+provided by Brown, Heathcote and Donkin and were retrieved in 2015 from this 
+website: http://www.newcl.org/members/chris/fitLBA.zip
+
 }

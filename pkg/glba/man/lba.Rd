@@ -34,6 +34,7 @@ hessian = FALSE,
 lower = -Inf,
 upper = Inf,
 fit=TRUE,
+trace=1,
 debug=FALSE) 
 
 \method{logLik}{lba}(object, ...)
@@ -98,6 +99,10 @@ tablba(object)
   
   \item{fit}{Logical; indicating whehter the model should be fit, ie, its
   parameters optimized or not.  Default is TRUE.}
+  
+  \item{trace}{Non-negative integer passed on to \code{optim}; indicating 
+  whehter optimization information should be returned during optimization; 
+  see \code{?optim} for details.}
   
   \item{debug}{Logical, default is FALSE; prints out detailed information
   on submodels, parameters et cetera during optimization.}

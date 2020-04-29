@@ -13,6 +13,8 @@
 \alias{obj}
 \alias{reorderDrift}
 
+\alias{getInt.lba}
+\alias{biclba}
 
 \title{
 Utility functions for internal use. 
@@ -21,7 +23,7 @@ Utility functions for internal use.
 
 \description{
 Functions for specifying, printing and altering the submodels for 
-each of the parameters. 
+each of the parameters; and for extracting parameters and the bic. 
 }
 
 \author{

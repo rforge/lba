@@ -25,9 +25,11 @@ for three difficulty levels.
 Example data from Brown and Heathcote, 2008. 
 }
 \source{
-Data from: \url{http://www.newcl.org/members/chris/fitLBA.zip}
 
-Brown and Heathcote, Cognitive science, 2008
+Data extracted in 2015 from: http://www.newcl.org/members/chris/fitLBA.zip
+
+Brown and Heathcote, Cognitive science, 2008. 
+
 }
 \references{
 Brown and Heathcote, 2008
